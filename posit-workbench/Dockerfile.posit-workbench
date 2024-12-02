@@ -71,7 +71,7 @@ RUN /opt/R/${R_VERSION}/bin/R -e \
 	"tableHTML", \
 	"txtplot"))'
 
-RUN --mount=type=secret,id=github_pat,dst=/tmp/github_pat /opt/R/${R_VERSION}/bin/R -e \
+RUN --mount=type=secret,id=github_pat /opt/R/${R_VERSION}/bin/R -e \
 	'remotes::install_github(c(\
 	"AllanCameron/geomtextpath", \
 	"aphalo/gginnards", \
@@ -129,7 +129,7 @@ RUN --mount=type=secret,id=github_pat,dst=/tmp/github_pat /opt/R/${R_VERSION}/bi
 	"YuLab-SMU/ggbreak", \
 	"YuLab-SMU/ggtree"\
 	),\
-	auth_token = readLines("/tmp/github_pat"), \
+	auth_token = readLines("/run/secrets/github_pat"), \
 	dependencies = TRUE, \
 	upgrade = "always")'
 

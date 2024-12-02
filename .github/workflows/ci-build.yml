@@ -80,10 +80,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
-      - name: Create Docker secret for GitHub PAT
-        run: |
-          echo "${{ secrets.GH_TOKEN }}" | docker secret create github_pat -
-
       - name: Build and test Docker image
         uses: docker/build-push-action@v5
         with:
@@ -91,16 +87,16 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: false
           load: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: test:${{ matrix.image_name }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY_GITHUB }}/${{ env.GH_REPOSITORY }}/${{ matrix.image_name }}:cache
           cache-to: type=registry,ref=${{ env.REGISTRY_GITHUB }}/${{ env.GH_REPOSITORY }}/${{ matrix.image_name }}:cache,mode=max
           secrets: |
-            github_pat=github_pat  # Use the same name as in the `docker secret create` step
+            github_pat=${{ secrets.GH_TOKEN }}
 
       - name: Test Docker image
         run: |
-          IMAGE_NAME="${{ matrix.image_name }}:${{ steps.meta.outputs.tags }}"
+          IMAGE_NAME="test:${{ matrix.image_name }}"
           TEST_SCRIPT="tests/${{ matrix.image_name }}_test.sh"
 
           if [ -f "$TEST_SCRIPT" ]; then
@@ -113,10 +109,6 @@ jobs:
           else
             echo "No test script found for $IMAGE_NAME. Skipping tests."
           fi
-
-      - name: Remove Docker secret (for security)
-        if: always() # Always run this step, even if the previous one fails
-        run: docker secret rm github_pat
 
       - name: Build and push
         if: github.event_name != 'pull_request'
