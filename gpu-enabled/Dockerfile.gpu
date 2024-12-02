@@ -1,0 +1,22 @@
+# Dockerfile.gpu
+FROM etretiakov/bioinfo:latest
+
+LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
+
+# Install NVIDIA drivers and CUDA toolkit
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends \
+	nvidia-driver-535 nvidia-cuda-toolkit \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Install GPU-accelerated Python packages
+RUN conda install -y -c rapidsai -c nvidia -c conda-forge \
+	rapids-blazing=23.10 \
+	cudf=23.10 \
+	cuml=23.10 \
+	cugraph=23.10 \
+	xgboost \
+	&& conda clean -a -y
+
+# Install GPU-accelerated R packages (e.g., xgboost)
+RUN /opt/R/${R_VERSION}/bin/Rscript -e "install.packages('xgboost', repos = 'https://cran.rstudio.com')"

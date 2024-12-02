@@ -1,0 +1,199 @@
+# Dockerfile.posit-workbench
+FROM etretiakov/r-python:latest
+
+LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG DRIVERS_VERSION=2024.03.0
+ARG MINIFORGE_VERSION="24.7.1-2"
+ARG PYTHON_VERSION=3.12
+ENV CONDA_DIR=/opt/conda
+ENV PATH=$CONDA_DIR/bin:$PATH
+ENV CONDA_CUDA_OVERRIDE="12.4"
+ARG PYTHON_SNAPSHOT='2024-12-01'
+ARG R_VERSION=4.4.2
+ARG R_SNAPSHOT='2024-12-01'
+
+# Install Posit Workbench
+ARG RSW_VERSION=2024.04.2+764.pro1
+ARG RSW_NAME=rstudio-workbench
+ARG RSW_DOWNLOAD_URL=https://download2.rstudio.org/server/jammy/amd64
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN apt-get update --fix-missing \
+	&& apt-get install --no-install-recommends -y gdebi-core \
+	&& RSW_VERSION_URL=$(echo -n "${RSW_VERSION}" | sed 's/+/-/g') \
+	&& curl -o rstudio-workbench.deb "${RSW_DOWNLOAD_URL}/${RSW_NAME}-${RSW_VERSION_URL}-amd64.deb" \
+	&& gdebi --non-interactive rstudio-workbench.deb \
+	&& rm rstudio-workbench.deb \
+	&& apt-get autoremove -y \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Install R packages
+RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(c(\
+	"colorRamps", \
+	"colourpicker", \
+	"dichromat", \
+	"explor", \
+	"ggrastr", \
+	"Gviz", \
+	"hyperdraw", \
+	"plot3D", \
+	"plotly", \
+	"quarto", \
+	"questionr", \
+	"randomcoloR", \
+	"rgl", \
+	"shinyAce", \
+	"shinyBS", \
+	"shinydashboard", \
+	"shinyjqui", \
+	"shinythemes", \
+	"sjPlot", \
+	"sphereplot", \
+	"tableHTML", \
+	"txtplot"\
+	), dependencies = TRUE, upgrade_dependencies = TRUE, ask = FALSE)'
+
+RUN /opt/R/${R_VERSION}/bin/R -e \
+	'pak::repo_add(CRAN = "RSPM@${R_SNAPSHOT}");\
+	pak::pkg_install(c(\
+	"colourpicker", \
+	"dichromat", \
+	"quarto", \
+	"plot3D", \
+	"plotly", \
+	"shinyAce", \
+	"shinyBS", \
+	"shinydashboard", \
+	"shinyjqui", \
+	"shinythemes", \
+	"tableHTML", \
+	"txtplot"))'
+
+RUN --mount=type=secret,id=github_pat,dst=/tmp/github_pat /opt/R/${R_VERSION}/bin/R -e \
+	'remotes::install_github(c(\
+	"AllanCameron/geomtextpath", \
+	"aphalo/gginnards", \
+	"aphalo/ggpp", \
+	"Ather-Energy/ggTimeSeries", \
+	"chrk623/dataAnim", \
+	"coolbutuseless/ggpattern", \
+	"corybrunson/ggalluvial", \
+	"crsh/papaja", \
+	"csdaw/ggprism", \
+	"davidsjoberg/ggbump", \
+	"ddsjoberg/gtsummary", \
+	"dreamRs/esquisse", \
+	"eclarke/ggbeeswarm", \
+	"eliocamp/ggnewscale", \
+	"ellisp/ggseas/pkg", \
+	"EmilHvitfeldt/ggpage", \
+	"erocoar/gghalves", \
+	"erocoar/ggpol", \
+	"gosling-lang/grosling", \
+	"haleyjeppson/ggmosaic", \
+	"hrbrmstr/waffle", \
+	"jjchern/gglorenz", \
+	"jokergoo/circlize", \
+	"lepennec/ggwordcloud", \
+	"marcmenem/ggshadow", \
+	"mattcowgill/ggannotate", \
+	"mdhall272/ggarchery", \
+	"metrumresearchgroup/ggedit", \
+	"mjskay/ggdist", \
+	"nsgrantham/ggbraid", \
+	"nsgrantham/ggdark", \
+	"nx10/httpgd", \
+	"oldlipe/ggsom", \
+	"pharmaverse/ggsurvfit", \
+	"ProjectMOSAIC/ggformula", \
+	"PursuitOfDataScience/ggDoubleHeat", \
+	"rcorty/ggQQunif", \
+	"ricardo-bion/ggradar", \
+	"ricardo-bion/ggtech", \
+	"rivasiker/ggHoriPlot", \
+	"Ryo-N7/tvthemes", \
+	"showteeth/ggpie", \
+	"stefanedwards/lemon", \
+	"tdhock/directlabels", \
+	"terrytangyuan/autoplotly", \
+	"teunbrand/ggh4x", \
+	"thackl/thacklr", \
+	"thomas-neitmann/ggcharts", \
+	"thomasp85/gganimate", \
+	"tidymodels/shinymodels", \
+	"trevorld/oblicubes", \
+	"wilkelab/ggtext", \
+	"xiangpin/ggstar", \
+	"YuLab-SMU/ggbreak", \
+	"YuLab-SMU/ggtree"\
+	),\
+	auth_token = readLines("/tmp/github_pat"), \
+	dependencies = TRUE, \
+	upgrade = "always")'
+
+# Install with Conda ----------------------------------------------------------#
+
+RUN mamba install --quiet -y \
+	ipython \
+	jupyter \
+	jupytext \
+	notebook \
+	requests \
+	altair \
+	bokeh \
+	dash \
+	datashader \
+	holoviews \
+	plotly \
+	plotly-orca \
+	pyopengl \
+	seaborn \
+	streamlit \
+	deepgraph \
+	graphviz && \
+	conda clean -a -y
+
+
+# Install with Pip ------------------------------------------------------------#
+
+RUN ${CONDA_DIR}/bin/pip config set global.index-url https://packagemanager.rstudio.com/pypi/${PYTHON_SNAPSHOT}/simple
+
+RUN ${CONDA_DIR}/bin/pip install --no-cache-dir \
+	'holoviews[extras]' \
+	altair==5.4.1 \
+	ipykernel>=6.29.5 \
+	IPython>=8.28.0 \
+	jupyter>=1.1.1 \
+	jupyterlab-kernelspy==4.0.0 \
+	nbdime==4.0.2 \
+	prompt_toolkit>=3.0.48 \
+	pyupset==0.1.1.post7 \
+	requests>=2.32.3 \
+	watermark==2.5.0
+
+RUN	ln -s ${CONDA_DIR}/bin/jupyter /usr/local/bin/jupyter
+
+RUN	ln -s ${CONDA_DIR}/bin/jupyter /usr/bin/jupyter
+
+RUN	set -ex && \
+	mamba upgrade --all \
+	-c rapidsai -c pytorch -c nvidia && \
+	mamba install --all \
+	-c rapidsai -c pytorch -c nvidia \
+	rapids=24.10 \
+	cuda-version=12.4 \
+	'pytorch=*=*cuda*' \
+	torchvision \
+	torchaudio \
+	pytorch-cuda=12.4 \
+	nx-cugraph=24.10 && \
+	conda info -a
+
+RUN ${CONDA_DIR}/bin/python -m ipykernel install
+
+# Expose necessary ports
+EXPOSE 8788/tcp
+
+CMD [ "/bin/bash" ]

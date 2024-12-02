@@ -1,0 +1,238 @@
+# Dockerfile.base
+FROM ubuntu:22.04
+
+LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Install essential system utilities
+RUN apt-get -qq update -y && \
+	apt-get install -y --no-install-recommends \
+	apt-transport-https \
+	apt-utils \
+	bat \
+	build-essential \
+	bwidget \
+	bzip2 \
+	ca-certificates \
+	cargo \
+	cloc \
+	cmake \
+	coinor-libclp-dev \
+	curl \
+	default-jdk \
+	default-jre \
+	dnsutils \
+	duf \
+	fd-find \
+	freeglut3-dev \
+	fzf \
+	g++ \
+	gcc \
+	gdal-bin \
+	gdebi-core \
+	gettext \
+	gfortran \
+	git \
+	glpk-utils \
+	gnupg \
+	gnupg2 \
+	golang \
+	graphicsmagick \
+	graphviz \
+	gsfonts \
+	hdf5-tools \
+	imagemagick \
+	jags \
+	jq \
+	krb5-user \
+	libarchive-dev \
+	libasound2 \
+	libblas3 \
+	libboost-all-dev \
+	libbz2-dev \
+	libc6-dev \
+	libcairo2-dev \
+	libcurl4-gnutls-dev \
+	libeigen3-dev \
+	libffi-dev \
+	libfftw3-dev \
+	libfontconfig1-dev \
+	libfreetype6-dev \
+	libfribidi-dev \
+	libgconf-2-4 \
+	libgdal-dev \
+	libgeos-dev \
+	libgit2-dev \
+	libglib2.0-dev \
+	libglpk-dev \
+	libglu1-mesa-dev \
+	libgmp3-dev \
+	libgnutls28-dev \
+	libgomp1 \
+	libgraphviz-dev \
+	libgsl0-dev \
+	libgtk2.0-dev \
+	libharfbuzz-dev \
+	libhdf5-dev \
+	libimage-exiftool-perl \
+	libjpeg-dev \
+	libjpeg-turbo8 \
+	libjpeg-turbo8-dev \
+	liblapack3 \
+	libleptonica-dev \
+	liblzma-dev \
+	libmagick++-dev \
+	libmagickwand-dev \
+	libmpfr-dev \
+	libmysqlclient-dev \
+	libncurses-dev \
+	libncurses5-dev \
+	libnetcdf-dev \
+	libnlopt-dev \
+	libnss3 \
+	libopenmpi-dev \
+	libpcre3-dev \
+	libpng-dev \
+	libpoppler-cpp-dev \
+	libpq-dev \
+	libproj-dev \
+	libprotobuf-dev \
+	libreadline-dev \
+	libsecret-1-dev \
+	libsm6 \
+	libssh2-1-dev \
+	libssl-dev \
+	libtbb-dev \
+	libtesseract-dev \
+	libtiff-dev \
+	libtiff5-dev \
+	libudunits2-dev \
+	libuser \
+	libuser1-dev \
+	libv8-dev \
+	libwebp-dev \
+	libxcb-render0-dev \
+	libxcb-shape0-dev \
+	libxcb-xfixes0-dev \
+	libxcb1-dev \
+	libxext-dev \
+	libxext6 \
+	libxft-dev \
+	libxml2-dev \
+	libxrender-dev \
+	libxrender1 \
+	libxss1 \
+	libxt-dev \
+	libxtst-dev \
+	libz-dev \
+	libzmq3-dev \
+	locales \
+	lsb-release \
+	mesa-common-dev \
+	nfs-common \
+	nvidia-cuda-dev \
+	openmpi-bin \
+	openssh-client \
+	pandoc \
+	pandoc-citeproc \
+	pdf2svg \
+	pigz \
+	pkg-config \
+	protobuf-compiler \
+	python3-dev \
+	python3-pip \
+	rrdtool \
+	rustc \
+	saga \
+	software-properties-common \
+	subversion \
+	tcl \
+	tesseract-ocr-eng \
+	tk-dev \
+	tk-table \
+	unixodbc \
+	unixodbc-dev \
+	unzip \
+	vim \
+	wget \
+	x11vnc \
+	xauth \
+	xfonts-base \
+	xvfb \
+	zlib1g-dev \
+	&& add-apt-repository ppa:maveonair/helix-editor \
+	&&  apt update \
+	&& apt install helix \
+	&& rm -rf /var/lib/apt/lists/*
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN apt-get -qq update --fix-missing \
+	&& apt-get autoremove -y \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Install google fonts --------------------------------------------------------#
+
+RUN wget https://github.com/google/fonts/archive/master.zip -O /usr/share/fonts/google_fonts.zip
+RUN cd /usr/share/fonts; unzip google_fonts.zip
+RUN fc-cache -f -v /usr/share/fonts/
+
+# Locale configuration --------------------------------------------------------#
+RUN locale-gen en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
+# Modern Unix components ------------------------------------------------------#
+
+RUN curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly
+
+RUN python -m pip install --upgrade pip wheel \
+	&& python -m pip install httpie
+
+# Install from crates.io ------------------------------------------------------#
+
+# Add cargo binaries to PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+RUN cargo install --locked --features clipboard broot \
+	&& broot --install \
+	&& broot --set-install-state installed \
+	&& cargo install bottom --locked \
+	&& cargo install hyperfine --locked \
+	&& cargo install pier --locked \
+	&& cargo install pueue --locked \
+	&& cargo install watchexec-cli  --locked \
+	&& cargo install xh --locked \
+	&& cargo install zoxide --locked
+
+RUN cargo install \
+	choose \
+	du-dust \
+	eza \
+	git-delta \
+	gping \
+	lsd \
+	procs \
+	ripgrep \
+	sd \
+	tlrc \
+	&& rm -rf /root/.cargo/registry /root/.cargo/git
+
+RUN echo 'eval "$(fzf --bash)"' >> /root/.bashrc \
+	&& echo 'eval "$(mcfly init bash)"' >> /root/.bashrc \
+	&& echo 'eval "$(zoxide init bash)"' >> /root/.bashrc
+
+# Golang ----------------------------------------------------------------------#
+# Set Go environment variables
+ENV GOPATH /go
+ENV PATH $PATH:/usr/local/go/bin:$GOPATH/bin
+
+# Install curlie
+RUN go install github.com/rs/curlie@latest \
+	&& go install github.com/mr-karan/doggo/cmd/doggo@latest \
+	&& go install github.com/jesseduffield/lazygit@latest
+
+# Set default command
+CMD ["/bin/bash"]

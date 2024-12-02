@@ -1,0 +1,10 @@
+channel_priority: strict
+channels:
+  - numba
+  - rapidsai
+  - pytorch
+  - nvidia
+  - pyviz
+  - bokeh
+  - conda-forge
+  - bioconda

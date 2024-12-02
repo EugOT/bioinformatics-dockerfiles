@@ -1,0 +1,12 @@
+# Dockerfile.bioinfo
+FROM yourusername/posit-workbench:latest
+
+LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
+
+# Install CPLEX optimization for COMPASS --------------------------------------#
+COPY cplex_studio2210.linux_x86_64.bin installer.properties /tmp/
+RUN cd /tmp && chmod +x /tmp/cplex_studio2210.linux_x86_64.bin && \
+	./cplex_studio2210.linux_x86_64.bin -i silent -f installer.properties && \
+	/opt/python/${PYTHON_VERSION}/bin/python /opt/ibm/ILOG/CPLEX_Studio221/python/setup.py install && \
+	rm -rf cplex_studio2210.linux_x86_64.bin installer.properties && \
+	/opt/python/${PYTHON_VERSION}/bin/pip install --no-cache-dir git+https://github.com/yoseflab/Compass.git --upgrade

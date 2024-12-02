@@ -1,0 +1,245 @@
+# Dockerfile.r-base
+FROM etretiakov/base:latest
+
+LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG R_VERSION=4.4.2
+ARG R_SNAPSHOT='2024-12-01'
+
+# Install dependencies for R
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends \
+	dirmngr \
+	unixodbc \
+	unixodbc-dev \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Install R -------------------------------------------------------------------#
+RUN wget -qO- https://cdn.rstudio.com/r/ubuntu-2204/pkgs/r-${R_VERSION}_1_amd64.deb > r-${R_VERSION}_1_amd64.deb && \
+	apt-get update && \
+	gdebi --non-interactive r-${R_VERSION}_1_amd64.deb && \
+	rm r-${R_VERSION}_1_amd64.deb && \
+	rm -rf /var/lib/apt/lists/*
+
+# Set CRAN repository snapshot
+RUN echo "options(repos = c(CRAN = 'https://packagemanager.rstudio.com/cran/__linux__/jammy/${R_SNAPSHOT}'), BioC_mirror = 'https://packagemanager.posit.co/bioconductor', BIOCONDUCTOR_CONFIG_FILE = 'https://packagemanager.posit.co/bioconductor/config.yaml', Ncpus = 80))" >> /opt/R/${R_VERSION}/lib/R/etc/Rprofile.site
+
+# Install BiocManager
+RUN /opt/R/${R_VERSION}/bin/Rscript -e \
+	"install.packages('BiocManager')"
+
+RUN /opt/R/${R_VERSION}/bin/Rscript -e \
+	'BiocManager::install(c(\
+	"Biobase",\
+	"ClassDiscovery",\
+	"easystats",\
+	"PCDimension"),\
+	dependencies = TRUE,\
+	upgrade_dependencies = TRUE)'
+
+RUN /opt/R/${R_VERSION}/bin/R -e \
+	'install.packages("easystats", repos = "https://easystats.r-universe.dev")'
+
+RUN /opt/R/${R_VERSION}/bin/R -e \
+	'easystats::install_suggested()'
+
+RUN /opt/R/${R_VERSION}/bin/R -e \
+	'install.packages(c("pak"))'
+
+# Install R packages
+RUN /opt/R/${R_VERSION}/bin/R -e \
+	'pak::repo_add(CRAN = "RSPM@${R_SNAPSHOT}");\
+	pak::pkg_install(c(\
+	"apcluster",\
+	"arrow", \
+	"boot", \
+	"Cairo", \
+	"class", \
+	"cluster", \
+	"codetools", \
+	"data.table", \
+	"devtools", \
+	"doFuture", \
+	"DT", \
+	"extrafont", \
+	"fpc", \
+	"future", \
+	"future.apply", \
+	"ggstatsplot", \
+	"git2r", \
+	"gridExtra", \
+	"irlba", \
+	"IRkernel", \
+	"KernSmooth", \
+	"knitr", \
+	"lattice", \
+	"magick", \
+	"Matrix", \
+	"mclust", \
+	"mgcv", \
+	"NbClust", \
+	"nlme", \
+	"nmslibR", \
+	"odbc", \
+	"plyr", \
+	"processx", \
+	"purrrlyr", \
+	"pvclust", \
+	"rARPACK", \
+	"RcppAnnoy", \
+	"RCurl", \
+	"RColorBrewer", \
+	"remotes", \
+	"reticulate", \
+	"rmarkdown", \
+	"robustbase", \
+	"roxygen2", \
+	"rpart", \
+	"RWeka", \
+	"sp", \
+	"svglite", \
+	"survival", \
+	"tidymodels", \
+	"tidyverse", \
+	"viridis", \
+	"workflowr", \
+	"yaml"))'
+
+RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(c(\
+	"bluster", \
+	"boot", \
+	"brms", \
+	"class", \
+	"cluster", \
+	"clusterProfiler", \
+	"codetools", \
+	"concaveman", \
+	"corrplot", \
+	"COSNet", \
+	"cqn", \
+	"dbparser", \
+	"dendextend", \
+	"DOSE", \
+	"fabia", \
+	"factoextra", \
+	"FactoInvestigate", \
+	"FactoMineR", \
+	"feather", \
+	"ggstatsplot", \
+	"glmpca", \
+	"gRain", \
+	"gRbase", \
+	"gRim", \
+	"jackstraw", \
+	"KernSmooth", \
+	"lattice", \
+	"lme4", \
+	"logisticPCA", \
+	"Matrix", \
+	"mclust", \
+	"mfa", \
+	"mgcv", \
+	"missMDA", \
+	"nlme", \
+	"penalized", \
+	"PerformanceAnalytics", \
+	"prophet", \
+	"pspearman", \
+	"RBGL", \
+	"rhdf5", \
+	"RobustRankAggreg", \
+	"rpart", \
+	"rstanarm", \
+	"survival", \
+	"switchde", \
+	"tidymodels"\
+	), dependencies = TRUE, upgrade_dependencies = TRUE, ask = FALSE)'
+
+RUN --mount=type=secret,id=github_pat,dst=/tmp/github_pat /opt/R/${R_VERSION}/bin/R -e \
+	'remotes::install_github(c(\
+	"ACCLAB/dabestr", \
+	"aloy/qqplotr", \
+	"aphalo/ggpmisc", \
+	"brandmaier/ggx", \
+	"briatte/ggnetwork", \
+	"const-ae/ggsignif", \
+	"const-ae/ggupset", \
+	"daattali/ggExtra", \
+	"davidgohel/ggiraph", \
+	"earowang/sugrrants", \
+	"easystats/see", \
+	"ggobi/ggally", \
+	"graysonwhite/gglm", \
+	"hms-dbmi/UpSetR", \
+	"hrbrmstr/cloc", \
+	"hrbrmstr/ggalt", \
+	"hrbrmstr/hrbrthemes", \
+	"IndrajeetPatil/ggstatsplot", \
+	"jamesotto852/ggdensity", \
+	"jhrcook/ggasym", \
+	"jonocarroll/ggeasy", \
+	"jrnold/ggthemes", \
+	"jtlandis/ggside", \
+	"kassambara/factoextra", \
+	"kassambara/ggcorrplot", \
+	"kassambara/ggpubr", \
+	"kassambara/survminer", \
+	"kenithgrey/ggQC", \
+	"krassowski/complex-upset", \
+	"larmarange/broom.helpers", \
+	"leeper/slopegraph", \
+	"linxihui/NNLM", \
+	"lionel-/ggstance", \
+	"LKremer/ggpointdensity", \
+	"malcolmbarrett/ggdag", \
+	"manlius/muxViz", \
+	"mjskay/tidybayes", \
+	"nanxstats/ggsci", \
+	"njtierney/naniar", \
+	"ropensci/skimr", \
+	"ropensci/targets", \
+	"ropensci/visdat", \
+	"rstudio/tensorflow", \
+	"sachsmc/plotROC", \
+	"sctyner/geomnet", \
+	"sfirke/janitor", \
+	"sinhrks/ggfortify", \
+	"sjessa/ggmin", \
+	"slowkow/ggrepel", \
+	"strengejacke/ggeffects", \
+	"thomasp85/ggforce", \
+	"thomasp85/ggfx", \
+	"thomasp85/ggraph", \
+	"thomasp85/patchwork", \
+	"tidymodels/applicable", \
+	"tidymodels/butcher", \
+	"tidymodels/corrr", \
+	"tidymodels/infer", \
+	"tidymodels/tidyposterior", \
+	"tidymodels/tidypredict", \
+	"tidyverse/tidyverse", \
+	"TysonStanley/tidyfast", \
+	"USCCANA/netplot", \
+	"VPetukhov/ggrastr", \
+	"wilkox/ggfittext", \
+	"XiaoLuo-boy/ggheatmap", \
+	"yeukyul/lindia"\
+	),\
+	auth_token = readLines("/tmp/github_pat"), \
+	dependencies = TRUE, \
+	upgrade = "always")'
+
+RUN /opt/R/${R_VERSION}/bin/R -e \
+	'remotes::install_bitbucket("jerry00/densitycut_dev", dependencies = TRUE)'
+
+
+# Symlink R and Rscript
+RUN ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R && \
+	ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript
+
+# Set R environment variables
+ENV R_HOME=/opt/R/${R_VERSION}/lib/R
+ENV PATH=/opt/R/${R_VERSION}/bin:${PATH}
+
+CMD [ "/bin/bash" ]

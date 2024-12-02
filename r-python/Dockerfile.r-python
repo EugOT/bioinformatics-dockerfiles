@@ -1,0 +1,29 @@
+# Dockerfile.r-python
+FROM etretiakov/r-base:latest
+
+LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
+
+ARG DEBIAN_FRONTEND=noninteractive
+ENV QUARTO_VERSION="1.6.39"
+
+# Copy Conda from python-base image
+COPY --from=etretiakov/python-base /opt/conda /opt/conda
+ENV PATH=/opt/conda/bin:$PATH
+
+# Install reticulate and configure
+RUN /opt/R/${R_VERSION}/bin/Rscript -e "install.packages('reticulate')"
+ENV RETICULATE_PYTHON=/opt/conda/bin/python
+
+# After installing R and before installing Quarto
+ENV QUARTO_R=/opt/R/${R_VERSION}/bin/R
+
+# Install Quarto --------------------------------------------------------------#
+
+RUN curl -o quarto-linux-amd64.deb -L https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.deb && \
+	apt-get -qq update --fix-missing && \
+	gdebi --non-interactive quarto-linux-amd64.deb && \
+	/usr/local/bin/quarto check && \
+	rm -rf quarto-linux-amd64.deb && \
+	rm -rf /var/lib/apt/lists/*
+
+CMD [ "/bin/bash" ]

@@ -1,0 +1,122 @@
+# Dockerfile.python-base
+FROM etretiakov/base:latest
+
+LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG MINIFORGE_VERSION="24.7.1-2"
+ARG PYTHON_VERSION=3.12
+ENV CONDA_DIR=/opt/conda
+ENV PATH=$CONDA_DIR/bin:$PATH
+ENV CONDA_CUDA_OVERRIDE="12.4"
+ARG PYTHON_SNAPSHOT='2024-12-01'
+
+# Install Miniforge
+RUN wget -q -c https://github.com/conda-forge/miniforge/releases/download/${MINIFORGE_VERSION}/Miniforge3-${MINIFORGE_VERSION}-$(uname)-$(uname -m).sh -O Miniforge3.sh && \
+	bash Miniforge3.sh -b -p $CONDA_DIR && \
+	rm Miniforge3.sh\
+	&& touch /root/.bashrc \
+	&& echo ". ${CONDA_DIR}/etc/profile.d/conda.sh && conda activate base" >> /etc/skel/.bashrc \
+	&& echo ". ${CONDA_DIR}/etc/profile.d/conda.sh && conda activate base" >> /root/.bashrc \
+	&& conda init --all --user --system -q \
+	&& conda config --set solver libmamba \
+	&& conda install -n base -y \
+	-c rapidsai \
+	-c pytorch \
+	-c conda-forge \
+	-c nvidia \
+	-c bioconda \
+	rapids=24.10 \
+	python=${PYTHON_VERSION} \
+	cuda-version=12.4 \
+	mamba \
+	scvi-tools \
+	snakemake \
+	'pytorch=*=*cuda*' \
+	torchvision \
+	torchaudio \
+	pytorch-cuda=12.4 \
+	graphistry \
+	networkx \
+	nx-cugraph=24.10
+
+
+COPY .condarc /root/.condarc
+COPY .condarc ${CONDA_DIR}/.condarc
+
+RUN set -ex && \
+	conda config --set always_yes yes --set changeps1 no && \
+	conda clean --all --yes && \
+	mamba clean --all --yes && \
+	mamba upgrade --all -n base --yes
+
+RUN mamba install --quiet -y \
+	dvc \
+	jax \
+	jaxlib \
+	numba-scipy \
+	numba \
+	scikit-image \
+	statsmodels \
+	gensim \
+	nmslib \
+	trimap \
+	imbalanced-learn \
+	metric-learn \
+	sinfo \
+	pyarrow \
+	pynndescent \
+	fbpca \
+	fitter \
+	hdbscan \
+	umap-learn \
+	pytables \
+	h5py \
+	hdf5 \
+	pybind11 \
+	scikit-plot \
+	pacmap \
+	rapids \
+	cuda-version=12.4 \
+	pytorch \
+	torchvision \
+	torchaudio \
+	pytorch-cuda=12.4 \
+	nx-cugraph && \
+	conda clean -a -y
+
+
+# Install with Pip ------------------------------------------------------------#
+
+RUN ${CONDA_DIR}/bin/pip config set global.index-url https://packagemanager.rstudio.com/pypi/${PYTHON_SNAPSHOT}/simple
+
+RUN ${CONDA_DIR}/bin/pip install --no-cache-dir \
+	ampligraph==2.0.0 \
+	category_encoders==2.6.4 \
+	dabest==0.2.5 \
+	denmune==1.17.1 \
+	featexp==0.0.7 \
+	MCML==0.0.1 \
+	nancorrmp==0.23 \
+	numba>=0.60.0 \
+	numpy>=1.26.4 \
+	pandas>=2.2.2 \
+	skglm==0.3.1 \
+	skope-rules==1.0.1 \
+	truncated_normal==0.4
+
+RUN	set -ex && \
+	mamba upgrade --all \
+	-c rapidsai -c pytorch -c nvidia && \
+	mamba install --all \
+	-c rapidsai -c pytorch -c nvidia \
+	rapids=24.10 \
+	cuda-version=12.4 \
+	'pytorch=*=*cuda*' \
+	torchvision \
+	torchaudio \
+	pytorch-cuda=12.4 \
+	nx-cugraph=24.10 && \
+	conda info -a
+
+CMD [ "/bin/bash" ]
