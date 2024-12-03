@@ -15,7 +15,6 @@ RUN apt-get -qq update -y && \
 	bwidget \
 	bzip2 \
 	ca-certificates \
-	cargo \
 	cloc \
 	cmake \
 	coinor-libclp-dev \
@@ -37,7 +36,6 @@ RUN apt-get -qq update -y && \
 	glpk-utils \
 	gnupg \
 	gnupg2 \
-	golang \
 	graphicsmagick \
 	graphviz \
 	gsfonts \
@@ -188,10 +186,13 @@ ENV LC_ALL=en_US.UTF-8
 
 RUN curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly
 
-RUN python -m pip install --upgrade pip wheel \
-	&& python -m pip install httpie
+RUN python3 -m pip install --upgrade pip wheel \
+	&& python3 -m pip install httpie
 
 # Install from crates.io ------------------------------------------------------#
+
+# Install Rust via rustup
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 # Add cargo binaries to PATH
 ENV PATH="/root/.cargo/bin:${PATH}"
@@ -225,9 +226,25 @@ RUN echo 'eval "$(fzf --bash)"' >> /root/.bashrc \
 	&& echo 'eval "$(zoxide init bash)"' >> /root/.bashrc
 
 # Golang ----------------------------------------------------------------------#
+# Set Go version
+ARG GO_VERSION=1.23.3
+# Install Go
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        GO_ARCH="amd64"; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+        GO_ARCH="arm64"; \
+    else \
+        echo "Unsupported architecture: $ARCH"; exit 1; \
+    fi && \
+    curl -O https://dl.google.com/go/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
+    tar -C /usr/local -xzf go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
+    rm go${GO_VERSION}.linux-${GO_ARCH}.tar.gz
 # Set Go environment variables
 ENV GOPATH /go
 ENV PATH $PATH:/usr/local/go/bin:$GOPATH/bin
+# Create go directory
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 # Install curlie
 RUN go install github.com/rs/curlie@latest \

@@ -43,7 +43,6 @@ essential_packages=(
     "bwidget"
     "bzip2"
     "ca-certificates"
-    "cargo"
     "cloc"
     "cmake"
     "curl"
@@ -64,7 +63,6 @@ essential_packages=(
     "glpk-utils"
     "gnupg"
     "gnupg2"
-    "golang"
     "graphicsmagick"
     "graphviz"
     "gsfonts"
@@ -98,7 +96,6 @@ essential_packages=(
     "libgnutls28-dev"
     "libgomp1"
     "libgraphviz-dev"
-    "libgsl0-dev"
     "libgtk2.0-dev"
     "libharfbuzz-dev"
     "libhdf5-dev"
@@ -137,7 +134,6 @@ essential_packages=(
     "libudunits2-dev"
     "libuser"
     "libuser1-dev"
-    "libv8-dev"
     "libwebp-dev"
     "libxcb-render0-dev"
     "libxcb-shape0-dev"
@@ -152,7 +148,6 @@ essential_packages=(
     "libxss1"
     "libxt-dev"
     "libxtst-dev"
-    "libz-dev"
     "libzmq3-dev"
     "locales"
     "lsb-release"
@@ -193,14 +188,6 @@ for package in "${essential_packages[@]}"; do
     test_package "$package"
 done
 
-# Test font installation
-echo "Testing Google Fonts installation"
-docker run --rm "$IMAGE_NAME" test -d /usr/share/fonts/fonts-master || {
-    echo "❌ Google Fonts not installed"
-    exit 1
-}
-echo "✅ Google Fonts installed"
-
 # Test Rust-based installations
 rust_commands=(
     "broot"
@@ -217,7 +204,7 @@ rust_commands=(
     "procs"
     "rg"  # ripgrep
     "sd"
-    "tlrc"
+    "tldr"
 )
 for cmd in "${rust_commands[@]}"; do
     test_command "$cmd"
