@@ -23,11 +23,10 @@ RUN wget -qO- https://cdn.rstudio.com/r/ubuntu-2204/pkgs/r-${R_VERSION}_1_amd64.
 	rm -rf /var/lib/apt/lists/*
 
 # Set CRAN repository snapshot
-RUN echo "options(repos = c(CRAN = 'https://packagemanager.rstudio.com/cran/__linux__/jammy/${R_SNAPSHOT}'), BioC_mirror = 'https://packagemanager.posit.co/bioconductor', BIOCONDUCTOR_CONFIG_FILE = 'https://packagemanager.posit.co/bioconductor/config.yaml', Ncpus = 80))" >> /opt/R/${R_VERSION}/lib/R/etc/Rprofile.site
+RUN echo "options(repos = c(CRAN = 'https://packagemanager.rstudio.com/cran/__linux__/jammy/${R_SNAPSHOT}'), BioC_mirror = 'https://packagemanager.posit.co/bioconductor', BIOCONDUCTOR_CONFIG_FILE = 'https://packagemanager.posit.co/bioconductor/config.yaml', Ncpus = 80)" >> /opt/R/${R_VERSION}/lib/R/etc/Rprofile.site
 
 # Install BiocManager
-RUN /opt/R/${R_VERSION}/bin/Rscript -e \
-	"install.packages('BiocManager')"
+RUN /opt/R/${R_VERSION}/bin/Rscript -e 'install.packages("BiocManager"); BiocManager::install(version = "3.20", dependencies = TRUE, upgrade_dependencies = TRUE, ask = FALSE)'
 
 RUN /opt/R/${R_VERSION}/bin/Rscript -e \
 	'BiocManager::install(c(\
@@ -47,64 +46,72 @@ RUN /opt/R/${R_VERSION}/bin/R -e \
 RUN /opt/R/${R_VERSION}/bin/R -e \
 	'install.packages(c("pak"))'
 
+# Symlink R and Rscript
+RUN ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R && \
+	ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript
+
+# Set R environment variables
+ENV R_HOME=/opt/R/${R_VERSION}/lib/R
+ENV PATH=/opt/R/${R_VERSION}/bin:${PATH}
+
 # Install R packages
 RUN /opt/R/${R_VERSION}/bin/R -e \
-	'pak::repo_add(CRAN = "RSPM@${R_SNAPSHOT}");\
+	"pak::repo_add(CRAN = 'RSPM@${R_SNAPSHOT}');\
 	pak::pkg_install(c(\
-	"apcluster",\
-	"arrow", \
-	"boot", \
-	"Cairo", \
-	"class", \
-	"cluster", \
-	"codetools", \
-	"data.table", \
-	"devtools", \
-	"doFuture", \
-	"DT", \
-	"extrafont", \
-	"fpc", \
-	"future", \
-	"future.apply", \
-	"ggstatsplot", \
-	"git2r", \
-	"gridExtra", \
-	"irlba", \
-	"IRkernel", \
-	"KernSmooth", \
-	"knitr", \
-	"lattice", \
-	"magick", \
-	"Matrix", \
-	"mclust", \
-	"mgcv", \
-	"NbClust", \
-	"nlme", \
-	"nmslibR", \
-	"odbc", \
-	"plyr", \
-	"processx", \
-	"purrrlyr", \
-	"pvclust", \
-	"rARPACK", \
-	"RcppAnnoy", \
-	"RCurl", \
-	"RColorBrewer", \
-	"remotes", \
-	"reticulate", \
-	"rmarkdown", \
-	"robustbase", \
-	"roxygen2", \
-	"rpart", \
-	"RWeka", \
-	"sp", \
-	"svglite", \
-	"survival", \
-	"tidymodels", \
-	"tidyverse", \
-	"viridis", \
-	"workflowr", \
-	"yaml"))'
+	'apcluster',\
+	'arrow', \
+	'boot', \
+	'Cairo', \
+	'class', \
+	'cluster', \
+	'codetools', \
+	'data.table', \
+	'devtools', \
+	'doFuture', \
+	'DT', \
+	'extrafont', \
+	'fpc', \
+	'future', \
+	'future.apply', \
+	'ggstatsplot', \
+	'git2r', \
+	'gridExtra', \
+	'irlba', \
+	'IRkernel', \
+	'KernSmooth', \
+	'knitr', \
+	'lattice', \
+	'magick', \
+	'Matrix', \
+	'mclust', \
+	'mgcv', \
+	'NbClust', \
+	'nlme', \
+	'nmslibR', \
+	'odbc', \
+	'plyr', \
+	'processx', \
+	'purrrlyr', \
+	'pvclust', \
+	'rARPACK', \
+	'RcppAnnoy', \
+	'RCurl', \
+	'RColorBrewer', \
+	'remotes', \
+	'reticulate', \
+	'rmarkdown', \
+	'robustbase', \
+	'roxygen2', \
+	'rpart', \
+	'RWeka', \
+	'sp', \
+	'svglite', \
+	'survival', \
+	'tidymodels', \
+	'tidyverse', \
+	'viridis', \
+	'workflowr', \
+	'yaml'))"
 
 RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(c(\
 	"bluster", \
@@ -232,14 +239,5 @@ RUN --mount=type=secret,id=github_pat /opt/R/${R_VERSION}/bin/R -e \
 
 RUN /opt/R/${R_VERSION}/bin/R -e \
 	'remotes::install_bitbucket("jerry00/densitycut_dev", dependencies = TRUE)'
-
-
-# Symlink R and Rscript
-RUN ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R && \
-	ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript
-
-# Set R environment variables
-ENV R_HOME=/opt/R/${R_VERSION}/lib/R
-ENV PATH=/opt/R/${R_VERSION}/bin:${PATH}
 
 CMD [ "/bin/bash" ]
