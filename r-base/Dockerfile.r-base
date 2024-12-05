@@ -44,6 +44,15 @@ RUN /opt/R/${R_VERSION}/bin/R -e \
 	'easystats::install_suggested()'
 
 RUN /opt/R/${R_VERSION}/bin/R -e \
+	'install.packages("polars", repos = "https://community.r-multiverse.org")'
+
+RUN /opt/R/${R_VERSION}/bin/R -e \
+	'install.packages("tidypolars", repos = "https://community.r-multiverse.org")'
+
+RUN /opt/R/${R_VERSION}/bin/R -e \
+	'install.packages("collapse", repos = "https://fastverse.r-universe.dev")'
+
+RUN /opt/R/${R_VERSION}/bin/R -e \
 	'install.packages(c("pak"))'
 
 # Symlink R and Rscript

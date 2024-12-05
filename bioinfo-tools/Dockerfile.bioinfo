@@ -70,18 +70,15 @@ RUN echo "STAR version: ${star_version}" >> versions.txt && \
 	seqtk_version=`strings $(which seqtk) | grep 'Version:' | cut -f 2 -d " "` && \
 	echo "seqtk version: ${seqtk_version}" >> versions.txt
 
-# Install Gephi ---------------------------------------------------------------#
-
-RUN mkdir gephi
-RUN  wget https://github.com/gephi/gephi-toolkit/releases/download/v${GEPHI_VERSION}/gephi-toolkit-${GEPHI_VERSION}-all.jar && mv gephi-toolkit-${GEPHI_VERSION}-all.jar /gephi/
-RUN  wget -c https://github.com/klarman-cell-observatory/forceatlas2/releases/download/${FA2_VERSION}/forceatlas2.jar && mv forceatlas2.jar /gephi/
-
 # Install R-packages ----------------------------------------------------------#
 
-RUN /opt/R/${R_VERSION}/bin/R -e \
-	'pak::repo_add(CRAN = "RSPM@${R_SNAPSHOT}");\
-	pak::pkg_install(c("SoupX"))'
+ARG R_VERSION=4.4.2
+ARG R_SNAPSHOT='2024-12-01'
 
+RUN /opt/R/${R_VERSION}/bin/R -e \
+	"pak::repo_add(CRAN = 'RSPM@${R_SNAPSHOT}');\
+	pak::pkg_install(c('SoupX'))"
+	
 # Install R packages
 RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(c(\
 	"anndata", \
@@ -181,7 +178,8 @@ RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(c(\
 	), dependencies = TRUE, upgrade_dependencies = TRUE, ask = FALSE)'
 
 RUN --mount=type=secret,id=github_pat /opt/R/${R_VERSION}/bin/R -e \
-	'remotes::install_github(c(\
+	'Sys.setenv(GITHUB_PAT = readLines("/run/secrets/github_pat"));\
+	remotes::install_github(c(\
 	"atakanekiz/CIPR-Package", \
 	"bnprks/BPCells/r", \
 	"cellgeni/sceasy", \
@@ -239,13 +237,20 @@ RUN --mount=type=secret,id=github_pat /opt/R/${R_VERSION}/bin/R -e \
 	"umbibio/CIE-R-Package", \
 	"wilkox/gggenes", \
 	"yanwu2014/swne", \
-	"xmc811/Scillus@v0.5.0", \
+	"xmc811/Scillus@v0.5.0" \
 	),\
-	auth_token = readLines("/run/secrets/github_pat"), \
 	dependencies = TRUE, \
-	upgrade = "always")'
+	upgrade = "always");\
+	Sys.unsetenv("GITHUB_PAT")'
 
 # Install with Conda ----------------------------------------------------------#
+
+ARG MINIFORGE_VERSION="24.7.1-2"
+ARG PYTHON_VERSION=3.12
+ENV CONDA_DIR=/opt/conda
+ENV PATH=$CONDA_DIR/bin:$PATH
+ENV CONDA_CUDA_OVERRIDE="12.4"
+ARG PYTHON_SNAPSHOT='2024-12-01'
 
 RUN mamba install --quiet -y \
 	scvi-tools \
@@ -300,18 +305,25 @@ RUN ${CONDA_DIR}/bin/pip install --no-cache-dir \
 	scplot==0.0.16
 
 
-RUN	set -ex && \
-	mamba upgrade --all \
+RUN set -ex && \
+	mamba update --all \
 	-c rapidsai -c pytorch -c nvidia && \
-	mamba install --all \
-	-c rapidsai -c pytorch -c nvidia \
-	rapids=24.10 \
-	cuda-version=12.4 \
-	'pytorch=*=*cuda*' \
-	torchvision \
-	torchaudio \
-	pytorch-cuda=12.4 \
+	conda clean -a -y && \
+	mamba clean -a -y && \
+	mamba install \
+	-c https://repo.prefix.dev/rapidsai \
+	-c https://repo.prefix.dev/pytorch \
+	-c https://repo.prefix.dev/nvidia \
+	-c https://repo.prefix.dev/conda-forge \
+	cuda-toolkit==12.4.1 \
+	libcufile-static=1.9.1.3 \
+	gds-tools=1.9.1.3 \
+	'rapids=24.10.*=cuda12_py312_*' \
+	'pytorch=*=*cuda12.4*' \
+	'pytorch-cuda=12.4' \
 	nx-cugraph=24.10 && \
+	conda clean -a -y && \
+	mamba clean -a -y && \
 	conda info -a
 
 CMD [ "/bin/bash" ]

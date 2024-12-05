@@ -14,53 +14,51 @@ test_command() {
 }
 # Test Miniforge installation
 echo "Testing Miniforge installation"
-docker run --rm "$IMAGE_NAME" conda --version | grep -q "conda" || {
+docker run --rm "$IMAGE_NAME" conda --version | rg "conda" || {
     echo "❌ Miniforge not installed"
     exit 1
 }
 echo "✅ Miniforge installed"
 # Test conda environment and packages
 conda_packages=(
-    "rapids=24.10"
-    "python=3.12"
-    "mamba"
+    "rapids                    24.10.00"
+    "python                    3.12"
+    "mamba                     2.0.4"
     "scvi-tools"
-    "snakemake"
-    "pytorch"
-    "torchvision"
-    "torchaudio"
+    "snakemake                 8.25.5"
+    "pytorch                   2.4.0           py3.12_cuda12.4_cudnn9.1.0_0"
     "graphistry"
     "networkx"
-    "nx-cugraph=24.10"
-    "dvc"
-    "jax"
-    "jaxlib"
-    "numba-scipy"
-    "numba"
-    "scikit-image"
-    "statsmodels"
-    "gensim"
-    "nmslib"
-    "trimap"
-    "imbalanced-learn"
-    "metric-learn"
-    "sinfo"
-    "pyarrow"
-    "pynndescent"
-    "fbpca"
-    "fitter"
-    "hdbscan"
-    "umap-learn"
-    "pytables"
-    "h5py"
-    "hdf5"
-    "pybind11"
-    "scikit-plot"
-    "pacmap"
+    "nx-cugraph                24.10.00"
+    "dvc                       3.58.0"
+    "jax                       0.4.34"
+    "jaxlib                    0.4.34          cuda120py312"
+    "numba-scipy               0.2.0                      py_0    numba"
+    "numba                     0.60.0"
+    "scikit-image              0.24.0"
+    "statsmodels               0.14.4"
+    "gensim                    4.3.2"
+    "nmslib                    2.1.1"
+    "trimap                    1.0.15"
+    "imbalanced-learn          0.12.4"
+    "metric-learn              0.7.0"
+    "sinfo                     0.3.1"
+    "pyarrow                   17.0.0"
+    "pynndescent               0.5.13"
+    "fbpca                     1.0"
+    "fitter                    1.4.1"
+    "hdbscan                   0.8.39"
+    "umap-learn                0.5.7"
+    "pytables                  3.10.1 "
+    "h5py                      3.12.1"
+    "hdf5                      1.14.3"
+    "pybind11                  2.13.6"
+    "scikit-plot               0.3.7"
+    "pacmap                    0.7.6"
 )
 for package in "${conda_packages[@]}"; do
     echo "Testing conda package: $package"
-    docker run --rm "$IMAGE_NAME" conda list | grep -q "$package" || {
+    docker run --rm "$IMAGE_NAME" conda list | rg "$package" || {
         echo "❌ Conda package '$package' not installed"
         exit 1
     }
@@ -68,23 +66,23 @@ for package in "${conda_packages[@]}"; do
 done
 # Test Python packages installed via pip
 pip_packages=(
-    "ampligraph==2.0.0"
-    "category_encoders==2.6.4"
-    "dabest==0.2.5"
-    "denmune==1.17.1"
-    "featexp==0.0.7"
-    "MCML==0.0.1"
-    "nancorrmp==0.23"
-    "numba>=0.60.0"
-    "numpy>=1.26.4"
-    "pandas>=2.2.2"
-    "skglm==0.3.1"
-    "skope-rules==1.0.1"
-    "truncated_normal==0.4"
+    "ampligraph                           2.0.0"
+    "category-encoders                    2.6.4"
+    "dabest                               0.2.5"
+    "denmune                              1.17.1"
+    "featexp"
+    "MCML"
+    "nancorrmp"
+    "numba"
+    "numpy"
+    "pandas"
+    "skglm"
+    "skope-rules"
+    "truncated_normal"
 )
 for package in "${pip_packages[@]}"; do
     echo "Testing pip package: $package"
-    docker run --rm "$IMAGE_NAME" pip list | grep -q "$package" || {
+    docker run --rm "$IMAGE_NAME" pip list | rg "$package" || {
         echo "❌ Pip package '$package' not installed"
         exit 1
     }

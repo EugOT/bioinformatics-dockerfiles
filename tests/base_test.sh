@@ -38,7 +38,6 @@ echo "✅ Locale correctly set"
 essential_packages=(
     "apt-transport-https"
     "apt-utils"
-    "bat"
     "build-essential"
     "bwidget"
     "bzip2"
@@ -190,8 +189,10 @@ done
 
 # Test Rust-based installations
 rust_commands=(
+    "bat"
     "broot"
     "btm"  # bottom
+    "http" # httpie
     "hyperfine"
     "xh"
     "zoxide"
@@ -219,14 +220,6 @@ go_commands=(
 for cmd in "${go_commands[@]}"; do
     test_command "$cmd"
 done
-
-# Test Python installations
-echo "Testing pip installation"
-docker run --rm "$IMAGE_NAME" pip3 list | grep -q "httpie" || {
-    echo "❌ HTTPie not installed via pip"
-    exit 1
-}
-echo "✅ HTTPie installed via pip"
 
 # Test shell configurations
 echo "Testing shell configurations"
