@@ -243,6 +243,8 @@ RUN --mount=type=secret,id=github_pat /opt/R/${R_VERSION}/bin/R -e \
 	upgrade = "always");\
 	Sys.unsetenv("GITHUB_PAT")'
 
+	RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(version = "3.20", dependencies = TRUE, upgrade_dependencies = TRUE, ask = FALSE)'
+
 # Install with Conda ----------------------------------------------------------#
 
 ARG MINIFORGE_VERSION="24.7.1-2"
@@ -321,9 +323,10 @@ RUN set -ex && \
 	'rapids=24.10.*=cuda12_py312_*' \
 	'pytorch=*=*cuda12.4*' \
 	'pytorch-cuda=12.4' \
-	nx-cugraph=24.10 && \
+	nx-cugraph=24.10 \
+	scvi-tools==1.2.1 \
+	cellrank==2.0.6 && \
 	conda clean -a -y && \
-	mamba clean -a -y && \
 	conda info -a
 
 CMD [ "/bin/bash" ]
