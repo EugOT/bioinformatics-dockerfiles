@@ -20,9 +20,11 @@ RUN apt-get -qq update -y && \
 	curl \
 	default-jdk \
 	default-jre \
+	dialog \
 	dnsutils \
 	duf \
 	fd-find \
+	fish \
 	freeglut3-dev \
 	fzf \
 	g++ \
@@ -40,6 +42,7 @@ RUN apt-get -qq update -y && \
 	gsfonts \
 	hdf5-tools \
 	imagemagick \
+	iputils-ping \
 	jags \
 	jq \
 	krb5-user \
@@ -158,6 +161,7 @@ RUN apt-get -qq update -y && \
 	xfonts-base \
 	xvfb \
 	zlib1g-dev \
+	zsh \
 	&& add-apt-repository ppa:maveonair/helix-editor \
 	&&  apt update \
 	&& apt install helix \
@@ -177,9 +181,9 @@ RUN fc-cache -f -v /usr/share/fonts/
 
 # Locale configuration --------------------------------------------------------#
 RUN locale-gen en_US.UTF-8
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
 # Modern Unix components ------------------------------------------------------#
 
@@ -187,11 +191,9 @@ ARG PIXI_VERSION=v0.39.0
 
 RUN curl -fsSL https://pixi.sh/install.sh | PIXI_VERSION=${PIXI_VERSION} bash
 
-ENV PATH="/root/.pixi/bin:${PATH}"
+ENV PATH "/root/.pixi/bin:${PATH}"
 
-RUN pixi info 
-
-RUN echo 'eval "$(pixi completion --shell bash)"' >> /root/.bashrc
+RUN pixi info
 
 RUN pixi global install bat
 
@@ -205,7 +207,7 @@ RUN curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 # Add cargo binaries to PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
+ENV PATH "/root/.cargo/bin:${PATH}"
 
 RUN cargo install --locked --features clipboard broot \
 	&& broot --install \
@@ -231,25 +233,21 @@ RUN cargo install \
 	tlrc \
 	&& rm -rf /root/.cargo/registry /root/.cargo/git
 
-RUN echo 'eval "$(fzf --bash)"' >> /root/.bashrc \
-	&& echo 'eval "$(mcfly init bash)"' >> /root/.bashrc \
-	&& echo 'eval "$(zoxide init bash)"' >> /root/.bashrc
-
 # Golang ----------------------------------------------------------------------#
 # Set Go version
-ARG GO_VERSION=1.23.3
+ARG GO_VERSION=1.23.4
 # Install Go
 RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "x86_64" ]; then \
-        GO_ARCH="amd64"; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        GO_ARCH="arm64"; \
-    else \
-        echo "Unsupported architecture: $ARCH"; exit 1; \
-    fi && \
-    curl -O https://dl.google.com/go/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
-    tar -C /usr/local -xzf go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
-    rm go${GO_VERSION}.linux-${GO_ARCH}.tar.gz
+	if [ "$ARCH" = "x86_64" ]; then \
+	GO_ARCH="amd64"; \
+	elif [ "$ARCH" = "aarch64" ]; then \
+	GO_ARCH="arm64"; \
+	else \
+	echo "Unsupported architecture: $ARCH"; exit 1; \
+	fi && \
+	curl -O https://dl.google.com/go/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
+	tar -C /usr/local -xzf go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
+	rm go${GO_VERSION}.linux-${GO_ARCH}.tar.gz
 # Set Go environment variables
 ENV GOPATH /go
 ENV PATH $PATH:/usr/local/go/bin:$GOPATH/bin
@@ -260,6 +258,24 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 RUN go install github.com/rs/curlie@latest \
 	&& go install github.com/mr-karan/doggo/cmd/doggo@latest \
 	&& go install github.com/jesseduffield/lazygit@latest
+
+# Configure bash
+RUN echo 'eval "$(pixi completion --shell bash)"' >> /etc/bash.bashrc \
+	&& echo 'eval "$(fzf --bash)"' >> /etc/bash.bashrc \
+	&& echo 'eval "$(mcfly init bash)"' >> /etc/bash.bashrc \
+	&& echo 'eval "$(zoxide init bash)"' >> /etc/bash.bashrc
+
+# Configure zsh
+RUN echo 'eval "$(pixi completion --shell zsh)"' >> /etc/zsh/zshrc \
+	&& echo 'eval "$(fzf --zsh)"' >> /etc/zsh/zshrc \
+	&& echo 'eval "$(mcfly init zsh)"' >> /etc/zsh/zshrc \
+	&& echo 'eval "$(zoxide init zsh)"' >> /etc/zsh/zshrc
+
+# Configure fish
+RUN echo 'eval (pixi completion --shell fish)' >> /etc/fish/config.fish \
+	&& echo 'eval (fzf --fish)' >> /etc/fish/config.fish \
+	&& echo 'eval (mcfly init fish)' >> /etc/fish/config.fish \
+	&& echo 'eval (zoxide init fish)' >> /etc/fish/config.fish
 
 # Set default command
 CMD ["/bin/bash"]

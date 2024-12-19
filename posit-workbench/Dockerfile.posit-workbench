@@ -181,6 +181,7 @@ RUN ${CONDA_DIR}/bin/pip config set global.index-url https://packagemanager.rstu
 RUN ${CONDA_DIR}/bin/pip install --no-cache-dir \
 	'holoviews[extras]' \
 	altair==5.4.1 \
+	chatlas==0.2.0 \
 	ipykernel>=6.29.5 \
 	IPython>=8.28.0 \
 	jupyter>=1.1.1 \
@@ -191,6 +192,8 @@ RUN ${CONDA_DIR}/bin/pip install --no-cache-dir \
 	pyupset==0.1.1.post7 \
 	requests>=2.32.3 \
 	watermark==2.5.0 \
+	dtreeviz[all] \
+	netron \
 	vetiver \
 	pwb_jupyterlab \
 	rsp_jupyter \

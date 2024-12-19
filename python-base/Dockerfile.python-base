@@ -6,18 +6,21 @@ LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
 ARG DEBIAN_FRONTEND=noninteractive
 ARG MINIFORGE_VERSION="24.7.1-2"
 ARG PYTHON_VERSION=3.12
-ENV CONDA_DIR=/opt/conda
-ENV PATH=$CONDA_DIR/bin:$PATH
-ENV CONDA_CUDA_OVERRIDE="12.4"
+ENV CONDA_DIR /opt/conda
+ENV PATH $CONDA_DIR/bin:$PATH
+ENV CONDA_CUDA_OVERRIDE "12.4"
 ARG PYTHON_SNAPSHOT='2024-12-01'
 
 # Install Miniforge
 RUN wget -q -c https://github.com/conda-forge/miniforge/releases/download/${MINIFORGE_VERSION}/Miniforge3-${MINIFORGE_VERSION}-$(uname)-$(uname -m).sh -O Miniforge3.sh && \
 	bash Miniforge3.sh -b -p $CONDA_DIR && \
 	rm Miniforge3.sh\
-	&& touch /root/.bashrc \
-	&& echo ". ${CONDA_DIR}/etc/profile.d/conda.sh && conda activate base" >> /etc/skel/.bashrc \
-	&& echo ". ${CONDA_DIR}/etc/profile.d/conda.sh && conda activate base" >> /root/.bashrc \
+	&& echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> /etc/bash.bashrc \
+	&& echo "conda activate base" >> /etc/bash.bashrc \
+	&& echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> /etc/zsh/zshrc \
+	&& echo "conda activate base" >> /etc/zsh/zshrc \
+	&& echo "source ${CONDA_DIR}/etc/profile.d/conda.fish" >> /etc/fish/config.fish \
+	&& echo "conda activate base" >> /etc/fish/config.fish \
 	&& conda init --all --user --system -q \
 	&& conda config --set solver libmamba \
 	&& conda install -n base -y \
@@ -73,7 +76,16 @@ RUN mamba install --quiet -y \
 	pytables \
 	h5py \
 	hdf5 \
+	hyperopt \
+	lightgbm \
+	dask \
+	dask-ml \
+	scikit-mdr \
+	skrebate \
+	tpot \
+	tpot2 \
 	pybind11 \
+	scikit-optimize \
 	scikit-plot \
 	pacmap \
 	rapids \
@@ -92,6 +104,7 @@ RUN ${CONDA_DIR}/bin/pip install --no-cache-dir \
 	ampligraph==2.0.0 \
 	category_encoders==2.6.4 \
 	dabest==0.2.5 \
+	sklearn-deap==0.3.0 \
 	denmune==1.17.1 \
 	featexp==0.0.7 \
 	MCML==0.0.1 \
@@ -103,7 +116,7 @@ RUN ${CONDA_DIR}/bin/pip install --no-cache-dir \
 	skope-rules==1.0.1 \
 	truncated_normal==0.4
 
-	RUN ${CONDA_DIR}/bin/pip install --extra-index-url=https://pypi.nvidia.com 'polars[gpu,all]'
+RUN ${CONDA_DIR}/bin/pip install --extra-index-url=https://pypi.nvidia.com 'polars[gpu,all]'
 
 RUN	set -ex && \
 	mamba update --all \
@@ -113,7 +126,7 @@ RUN	set -ex && \
 	mamba install \
 	-c https://repo.prefix.dev/rapidsai \
 	-c https://repo.prefix.dev/pytorch \
-  -c https://repo.prefix.dev/nvidia \
+	-c https://repo.prefix.dev/nvidia \
 	-c https://repo.prefix.dev/conda-forge \
 	cuda-toolkit==12.4.1 \
 	libcufile-static=1.9.1.3 \

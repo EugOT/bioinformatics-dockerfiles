@@ -60,7 +60,7 @@ RUN wget https://github.com/deweylab/RSEM/archive/refs/tags/v${rsem_version}.tar
 	make && \
 	cd / && rm v${rsem_version}.tar.gz
 
-ENV PATH="${PATH}:/opt/STAR-${star_version}/source:/opt/seqtk:/opt/bbmap:/opt/RSEM-${rsem_version}"
+ENV PATH "${PATH}:/opt/STAR-${star_version}/source:/opt/seqtk:/opt/bbmap:/opt/RSEM-${rsem_version}"
 
 #Saving Software Versions to a file
 RUN echo "STAR version: ${star_version}" >> versions.txt && \
@@ -78,7 +78,7 @@ ARG R_SNAPSHOT='2024-12-01'
 RUN /opt/R/${R_VERSION}/bin/R -e \
 	"pak::repo_add(CRAN = 'RSPM@${R_SNAPSHOT}');\
 	pak::pkg_install(c('SoupX'))"
-	
+
 # Install R packages
 RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(c(\
 	"anndata", \
@@ -243,15 +243,15 @@ RUN --mount=type=secret,id=github_pat /opt/R/${R_VERSION}/bin/R -e \
 	upgrade = "always");\
 	Sys.unsetenv("GITHUB_PAT")'
 
-	RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(version = "3.20", dependencies = TRUE, upgrade_dependencies = TRUE, ask = FALSE)'
+RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(version = "3.20", dependencies = TRUE, upgrade_dependencies = TRUE, ask = FALSE)'
 
 # Install with Conda ----------------------------------------------------------#
 
 ARG MINIFORGE_VERSION="24.7.1-2"
 ARG PYTHON_VERSION=3.12
-ENV CONDA_DIR=/opt/conda
-ENV PATH=$CONDA_DIR/bin:$PATH
-ENV CONDA_CUDA_OVERRIDE="12.4"
+ENV CONDA_DIR /opt/conda
+ENV PATH $CONDA_DIR/bin:$PATH
+ENV CONDA_CUDA_OVERRIDE "12.4"
 ARG PYTHON_SNAPSHOT='2024-12-01'
 
 RUN mamba install --quiet -y \

@@ -6,17 +6,17 @@ LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
 ARG DEBIAN_FRONTEND=noninteractive
 ARG MINIFORGE_VERSION="24.7.1-2"
 ARG PYTHON_VERSION=3.12
-ENV CONDA_DIR=/opt/conda
-ENV PATH=$CONDA_DIR/bin:$PATH
-ENV CONDA_CUDA_OVERRIDE="12.4"
+ENV CONDA_DIR /opt/conda
+ENV PATH $CONDA_DIR/bin:$PATH
+ENV CONDA_CUDA_OVERRIDE "12.4"
 ARG PYTHON_SNAPSHOT='2024-12-01'
 ARG R_VERSION=4.4.2
 ARG R_SNAPSHOT='2024-12-01'
-ENV QUARTO_VERSION="1.6.39"
+ENV QUARTO_VERSION "1.6.39"
 
 # Copy Conda from python-base image
 COPY --from=etretiakov/python-base /opt/conda /opt/conda
-ENV PATH=/opt/conda/bin:$PATH
+ENV PATH /opt/conda/bin:$PATH
 
 # Install reticulate and configure
 RUN /opt/R/${R_VERSION}/bin/Rscript -e \
@@ -24,7 +24,7 @@ RUN /opt/R/${R_VERSION}/bin/Rscript -e \
 	pak::pkg_install(c(\
 	'reticulate', \
 	'quarto'))"
-ENV RETICULATE_PYTHON=/opt/conda/bin/python
+ENV RETICULATE_PYTHON /opt/conda/bin/python
 
 RUN ${CONDA_DIR}/bin/pip config set global.index-url https://packagemanager.rstudio.com/pypi/${PYTHON_SNAPSHOT}/simple
 
