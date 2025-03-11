@@ -34,6 +34,7 @@ RUN apt-get -qq update -y && \
 	gettext \
 	gfortran \
 	git \
+	git-lfs \
 	gh \
 	glpk-utils \
 	gnupg \
@@ -130,11 +131,13 @@ RUN apt-get -qq update -y && \
 	libzmq3-dev \
 	locales \
 	lsb-release \
+	make \
 	mesa-common-dev \
 	nfs-common \
 	nvidia-cuda-dev \
 	openmpi-bin \
 	openssh-client \
+	parallel \
 	pandoc \
 	pandoc-citeproc \
 	pdf2svg \
@@ -182,17 +185,17 @@ RUN fc-cache -f -v /usr/share/fonts/
 
 # Locale configuration --------------------------------------------------------#
 RUN locale-gen en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 # Modern Unix components ------------------------------------------------------#
 
-ARG PIXI_VERSION=v0.39.0
+ARG PIXI_VERSION=v0.42.1
 
 RUN curl -fsSL https://pixi.sh/install.sh | PIXI_VERSION=${PIXI_VERSION} bash
 
-ENV PATH "/root/.pixi/bin:${PATH}"
+ENV PATH="/root/.pixi/bin:${PATH}"
 
 RUN pixi info
 
@@ -208,7 +211,7 @@ RUN curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 # Add cargo binaries to PATH
-ENV PATH "/root/.cargo/bin:${PATH}"
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN cargo install --locked --features clipboard broot \
 	&& broot --install \
@@ -250,8 +253,8 @@ RUN ARCH=$(uname -m) && \
 	tar -C /usr/local -xzf go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
 	rm go${GO_VERSION}.linux-${GO_ARCH}.tar.gz
 # Set Go environment variables
-ENV GOPATH /go
-ENV PATH $PATH:/usr/local/go/bin:$GOPATH/bin
+ENV GOPATH=/go
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 # Create go directory
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 

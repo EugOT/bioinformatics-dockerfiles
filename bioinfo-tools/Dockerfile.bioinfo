@@ -8,6 +8,18 @@ ARG star_version="2.7.11b"
 ARG samtools_version="1.21"
 ARG bbmap_version="39.10"
 ARG rsem_version="1.3.3"
+ARG MINIFORGE_VERSION="24.7.1-2"
+ARG PYTHON_VERSION=3.12
+ENV CONDA_DIR=/opt/conda
+ENV PATH=$CONDA_DIR/bin:$PATH
+ENV CONDA_CUDA_OVERRIDE="12.8"
+ARG PYTHON_SNAPSHOT='2025-03-10'
+ARG R_VERSION=4.4.3
+ARG R_SNAPSHOT='2025-03-10'
+ENV QUARTO_VERSION="1.6.39"
+ENV QUARTO_R=/opt/R/$R_VERSION/bin/R
+ENV QUARTO_PYTHON=$CONDA_DIR/bin/python
+ENV RETICULATE_PYTHON=$QUARTO_PYTHON
 
 # Install common system dependencies for bioinformatics tools
 RUN apt-get update && \
@@ -71,9 +83,6 @@ RUN echo "STAR version: ${star_version}" >> versions.txt && \
 	echo "seqtk version: ${seqtk_version}" >> versions.txt
 
 # Install R-packages ----------------------------------------------------------#
-
-ARG R_VERSION=4.4.2
-ARG R_SNAPSHOT='2024-12-01'
 
 RUN /opt/R/${R_VERSION}/bin/R -e \
 	"pak::repo_add(CRAN = 'RSPM@${R_SNAPSHOT}');\
@@ -247,13 +256,6 @@ RUN /opt/R/${R_VERSION}/bin/Rscript -e 'BiocManager::install(version = "3.20", d
 
 # Install with Conda ----------------------------------------------------------#
 
-ARG MINIFORGE_VERSION="24.7.1-2"
-ARG PYTHON_VERSION=3.12
-ENV CONDA_DIR /opt/conda
-ENV PATH $CONDA_DIR/bin:$PATH
-ENV CONDA_CUDA_OVERRIDE "12.4"
-ARG PYTHON_SNAPSHOT='2024-12-01'
-
 RUN mamba install --quiet -y \
 	scvi-tools \
 	snakemake \
@@ -317,13 +319,11 @@ RUN set -ex && \
 	-c https://repo.prefix.dev/pytorch \
 	-c https://repo.prefix.dev/nvidia \
 	-c https://repo.prefix.dev/conda-forge \
-	cuda-toolkit==12.4.1 \
-	libcufile-static=1.9.1.3 \
-	gds-tools=1.9.1.3 \
-	'rapids=24.10.*=cuda12_py312_*' \
-	'pytorch=*=*cuda12.4*' \
-	'pytorch-cuda=12.4' \
-	nx-cugraph=24.10 \
+	cuda-toolkit==12.8 \
+	libcufile-static \
+	gds-tools \
+	'rapids=25.02.*=cuda12_py312_*' \
+	nx-cugraph=25.02 \
 	scvi-tools==1.2.1 \
 	cellrank==2.0.6 && \
 	conda clean -a -y && \

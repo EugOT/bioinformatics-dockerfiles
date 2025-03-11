@@ -6,10 +6,10 @@ LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
 ARG DEBIAN_FRONTEND=noninteractive
 ARG MINIFORGE_VERSION="24.7.1-2"
 ARG PYTHON_VERSION=3.12
-ENV CONDA_DIR /opt/conda
-ENV PATH $CONDA_DIR/bin:$PATH
-ENV CONDA_CUDA_OVERRIDE "12.4"
-ARG PYTHON_SNAPSHOT='2024-12-01'
+ENV CONDA_DIR=/opt/conda
+ENV PATH=$CONDA_DIR/bin:$PATH
+ENV CONDA_CUDA_OVERRIDE="12.8"
+ARG PYTHON_SNAPSHOT='2025-03-10'
 
 # Install Miniforge
 RUN wget -q -c https://github.com/conda-forge/miniforge/releases/download/${MINIFORGE_VERSION}/Miniforge3-${MINIFORGE_VERSION}-$(uname)-$(uname -m).sh -O Miniforge3.sh && \
@@ -25,23 +25,20 @@ RUN wget -q -c https://github.com/conda-forge/miniforge/releases/download/${MINI
 	&& conda config --set solver libmamba \
 	&& conda install -n base -y \
 	-c rapidsai \
-	-c pytorch \
 	-c conda-forge \
 	-c nvidia \
 	-c bioconda \
-	rapids=24.10 \
+	rapids=25.02 \
 	python=${PYTHON_VERSION} \
-	cuda-toolkit==12.4.1 \
-	cuda-version=12.4 \
+	cuda-toolkit=12.8 \
+	cuda-version=12.8 \
 	mamba \
 	scvi-tools \
 	snakemake \
-	jaxlib=0.4.34 \
-	'pytorch=*=*cuda*' \
-	pytorch-cuda=12.4 \
+	jaxlib \
 	graphistry \
 	networkx \
-	nx-cugraph=24.10
+	nx-cugraph=25.02
 
 
 COPY .condarc /root/.condarc
@@ -56,7 +53,7 @@ RUN set -ex && \
 RUN mamba install --quiet -y \
 	dvc \
 	jax \
-	jaxlib=0.4.34 \
+	jaxlib \
 	numba-scipy \
 	numba \
 	scikit-image \
@@ -89,9 +86,7 @@ RUN mamba install --quiet -y \
 	scikit-plot \
 	pacmap \
 	rapids \
-	cuda-version=12.4 \
-	'pytorch=*=*cuda12.4*' \
-	pytorch-cuda=12.4 \
+	cuda-version=12.8 \
 	nx-cugraph && \
 	conda clean -a -y
 
@@ -120,20 +115,17 @@ RUN ${CONDA_DIR}/bin/pip install --extra-index-url=https://pypi.nvidia.com 'pola
 
 RUN	set -ex && \
 	mamba update --all \
-	-c rapidsai -c pytorch -c nvidia && \
+	-c rapidsai -c nvidia && \
 	conda clean -a -y && \
 	mamba clean -a -y && \
 	mamba install \
 	-c https://repo.prefix.dev/rapidsai \
-	-c https://repo.prefix.dev/pytorch \
 	-c https://repo.prefix.dev/nvidia \
 	-c https://repo.prefix.dev/conda-forge \
-	cuda-toolkit==12.4.1 \
-	libcufile-static=1.9.1.3 \
-	gds-tools=1.9.1.3 \
-	'rapids=24.10.*=cuda12_py312_*' \
-	'pytorch=*=*cuda12.4*' \
-	'pytorch-cuda=12.4' \
+	cuda-toolkit==12.8 \
+	libcufile-static \
+	gds-tools \
+	'rapids=25.02.*=cuda12_py312_*' \
 	graspologic \
 	karateclub \
 	leidenalg \

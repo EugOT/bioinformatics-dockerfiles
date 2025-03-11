@@ -4,8 +4,8 @@ FROM etretiakov/base:latest
 LABEL maintainer="Evgenii Tretiakov <evgenii.tretiakov@meduniwien.ac.at>"
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG R_VERSION=4.4.2
-ARG R_SNAPSHOT='2024-12-01'
+ARG R_VERSION=4.4.3
+ARG R_SNAPSHOT='2025-03-10'
 
 # Install dependencies for R
 RUN apt-get update && \
